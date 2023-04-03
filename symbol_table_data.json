@@ -1,0 +1,44 @@
+{
+  "include": {
+    "data type": null,
+    "value": null,
+    "address": null,
+    "scope": null
+  },
+  "LRParser": {
+    "data type": null,
+    "value": null,
+    "address": null,
+    "scope": null
+  },
+  "FILE": {
+    "data type": null,
+    "value": null,
+    "address": null,
+    "scope": null
+  },
+  "sourceFile": {
+    "data type": null,
+    "value": null,
+    "address": null,
+    "scope": null
+  },
+  "fopen": {
+    "data type": null,
+    "value": null,
+    "address": null,
+    "scope": null
+  },
+  "fclose": {
+    "data type": null,
+    "value": null,
+    "address": null,
+    "scope": null
+  },
+  "parser": {
+    "data type": null,
+    "value": null,
+    "address": null,
+    "scope": null
+  }
+}
