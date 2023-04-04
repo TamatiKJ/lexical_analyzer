@@ -1,6 +1,6 @@
 # lexical_analyzer
 
-Lexical Analyzer ode for a school assignment for the class Compiler Construction
+Lexical Analyzer code for a school assignment for the class Compiler Construction
 
 Install pyparsing by running the command "pip install pyparsing" in your terminal
 
