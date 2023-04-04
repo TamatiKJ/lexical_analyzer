@@ -1,41 +1,23 @@
 {
-  "include": {
+  "a3": {
     "data type": null,
     "value": null,
     "address": null,
     "scope": null
   },
-  "LRParser": {
+  "s3": {
     "data type": null,
     "value": null,
     "address": null,
     "scope": null
   },
-  "FILE": {
+  "do": {
     "data type": null,
     "value": null,
     "address": null,
     "scope": null
   },
-  "sourceFile": {
-    "data type": null,
-    "value": null,
-    "address": null,
-    "scope": null
-  },
-  "fopen": {
-    "data type": null,
-    "value": null,
-    "address": null,
-    "scope": null
-  },
-  "fclose": {
-    "data type": null,
-    "value": null,
-    "address": null,
-    "scope": null
-  },
-  "parser": {
+  "a2": {
     "data type": null,
     "value": null,
     "address": null,

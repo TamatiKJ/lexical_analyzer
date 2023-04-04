@@ -3,13 +3,12 @@ import pprint
 import json
 
 def ignore_comments():
-    """Reads source program strips it of any occurring comments
-       Returns:
-            comment free code for lexical analysis
-    """
-
-    with open('main.c', 'r') as sf:
-        prog = sf.read()
+    try:
+        with open('main.c', 'r') as sf:
+            prog = sf.read()
+    except FileNotFoundError:
+        print("Error: Could not find the 'main.c' file.")
+        return ""
 
     single_comment = pp.Literal("//") + pp.restOfLine
     multi_line_comment = pp.nestedExpr("/*", "*/")
@@ -42,91 +41,89 @@ def add_to(result):
 
 
 def lexeme_grammar():
-    """ 
-       Returns:
-            grammar for subset of C
+    try:
+        key_words = pp.oneOf(['int', 'float', 'continue', 'default', 'switch', 'case', 'goto', 'for', 'printf',
+                              'double', 'long', 'unsigned', 'auto', 'if', 'break', 'while', 'else', 'short', 'const',
+                              'scanf',
+                              'void', 'char', 'static', 'union', 'struct', 'typedef', 'main', 'return',
+                              'else if']).setResultsName('t_reserved')
 
-    """
+        identifiers = pp.Word(pp.alphas + "_" + pp.alphanums +
+                              "_").setResultsName('t_identifier').addParseAction(add_to)
 
-    key_words = pp.oneOf(['int', 'float', 'continue', 'default', 'switch', 'case', 'goto', 'for', 'printf',
-                          'double', 'long', 'unsigned', 'auto', 'if', 'break', 'while', 'else', 'short', 'const',
-                          'scanf',
-                          'void', 'char', 'static', 'union', 'struct', 'typedef', 'main', 'return',
-                          'else if']).setResultsName('t_reserved')
+        integers = pp.Combine(pp.Optional(pp.oneOf("+ -")) + pp.Word(pp.nums) + pp.Optional(pp.oneOf("e E") +
+                                                                                            pp.Optional(
+                                                                                                pp.oneOf("+ -")) + pp.Word(
+            pp.nums))).setResultsName('t_integer')
 
-    identifiers = pp.Word(pp.alphas + "_" + pp.alphanums +
-                          "_").setResultsName('t_identifier').addParseAction(add_to)
+        floats = pp.Combine(pp.Optional(pp.oneOf('+ -')) + (pp.Word(pp.nums) + pp.Literal('.')
+                                                            # float with decimal point
+                                                            + pp.Optional(pp.Word(pp.nums)) |
+                                                            # float with leading decimal point
+                                                            pp.Literal(
+                                                                '.') + pp.Optional(pp.oneOf('+ -')) + pp.Word(pp.nums)
+                                                            ) + (pp.Optional(pp.oneOf('e E') + pp.Optional(pp.oneOf('+ -')) + pp.Word(pp.nums)))).setResultsName('t_float')
 
-    integers = pp.Combine(pp.Optional(pp.oneOf("+ -")) + pp.Word(pp.nums) + pp.Optional(pp.oneOf("e E") +
-                                                                                        pp.Optional(
-                                                                                            pp.oneOf("+ -")) + pp.Word(
-        pp.nums))).setResultsName('t_integer')
+        chars = pp.QuotedString("'", escChar='\\').setResultsName('t_char')
 
-    floats = pp.Combine(pp.Optional(pp.oneOf('+ -')) + (pp.Word(pp.nums) + pp.Literal('.')
-                                                        # float with decimal point
-                                                        + pp.Optional(pp.Word(pp.nums)) |
-                                                        # float with leading decimal point
-                                                        pp.Literal(
-                                                            '.') + pp.Optional(pp.oneOf('+ -')) + pp.Word(pp.nums)
-                                                        ) + (pp.Optional(pp.oneOf('e E') + pp.Optional(pp.oneOf('+ -')) + pp.Word(pp.nums)))).setResultsName('t_float')
+        increment_ops = pp.oneOf('++ --').setResultsName('t_inc')
+        arithmetic_ops = pp.oneOf('+ * - / % =').setResultsName('t_arith')
+        comparison_ops = pp.oneOf(
+            '<< >>  < <= > >= == !=').setResultsName('t_compare')
+        logical_ops = pp.oneOf('&& ||').setResultsName('t_logic')
+        compound_assignment_ops = pp.oneOf(
+            '+= -= *= /= %= <<= >>= &= ^= |=').setResultsName('t_compound_assignment')
+        bitwise_logical_ops = pp.oneOf('| ^ ~ &').setResultsName('t_bit_op')
 
-    chars = pp.QuotedString("'", escChar='\\').setResultsName('t_char')
+        separators = (pp.Literal(',') | pp.Literal(';') | pp.Literal(':') | pp.Literal('[') | pp.Literal(']') |
+                      pp.Literal('{') | pp.Literal('}') | pp.Literal(
+                          '(') | pp.Literal(')')
+                      ).setResultsName('t_separator')
 
-    increment_ops = pp.oneOf('++ --').setResultsName('t_inc')
-    arithmetic_ops = pp.oneOf('+ * - / % =').setResultsName('t_arith')
-    comparison_ops = pp.oneOf(
-        '<< >>  < <= > >= == !=').setResultsName('t_compare')
-    logical_ops = pp.oneOf('&& ||').setResultsName('t_logic')
-    compound_assignment_ops = pp.oneOf(
-        '+= -= *= /= %= <<= >>= &= ^= |=').setResultsName('t_compound_assignment')
-    bitwise_logical_ops = pp.oneOf('| ^ ~ &').setResultsName('t_bit_op')
+        format_specifiers = pp.oneOf(
+            '%d %f %x %u %c %s %e %p %lu %ld %lf').setResultsName('t_format')
 
-    separators = (pp.Literal(',') | pp.Literal(';') | pp.Literal(':') | pp.Literal('[') | pp.Literal(']') |
-                  pp.Literal('{') | pp.Literal('}') | pp.Literal(
-                      '(') | pp.Literal(')')
-                  ).setResultsName('t_separator')
+        string_literal = pp.QuotedString(
+            '"', escChar='\\').setResultsName('t_string')
 
-    format_specifiers = pp.oneOf(
-        '%d %f %x %u %c %s %e %p %lu %ld %lf').setResultsName('t_format')
+        grammar = (key_words | floats | integers | identifiers | chars | format_specifiers | increment_ops |
+                   arithmetic_ops | comparison_ops | logical_ops | compound_assignment_ops | bitwise_logical_ops |
+                   separators | string_literal)
 
-    string_literal = pp.QuotedString(
-        '"', escChar='\\').setResultsName('t_string')
-
-    grammar = (key_words | floats | integers | identifiers | chars | format_specifiers | increment_ops |
-               arithmetic_ops | comparison_ops | logical_ops | compound_assignment_ops | bitwise_logical_ops |
-               separators | string_literal)
-
-    return grammar
+        return grammar
+    except Exception as e:
+        print(f"Error while defining the grammar: {str(e)}")
+        return None
 
 
 def tokenize():
-    """
-        Generates tokens based on grammar and fills the symbol table
+    try:
+        input_stream = ignore_comments()
+        if not input_stream:
+            return
 
-    """
-    input_stream = ignore_comments()
-    x = lexeme_grammar()
-    toks = list()
+        x = lexeme_grammar()
+        if not x:
+            return
 
-    for i, line in enumerate(input_stream.splitlines()):
-        for tokens in x.scanString(line):
-            # token ,start position and end position
-            try:
+        toks = list()
 
-                print(
-                    f'Token: {tokens[0].getName()}, Attribute: {tokens[0]}, At Position: {tokens[1] + 1} Line: {i + 1}\n')
+        for i, line in enumerate(input_stream.splitlines()):
+            for tokens in x.scanString(line):
+                try:
+                    print(
+                        f'Token: {tokens[0].getName()}, Attribute: {tokens[0]}, At Position: {tokens[1] + 1} Line: {i + 1}\n')
 
-                toks.append((tokens[0].getName(), tokens[0][0], i))
-            except pp.ParseException as e:
-                print(f'Parsing error: {e.msg} at position {e.loc}')
-                continue
+                    toks.append((tokens[0].getName(), tokens[0][0], i))
+                except pp.ParseException as e:
+                    print(f'Parsing error: {e.msg} at position {e.loc}')
+                    continue
 
-    with open('symbol_table_data.json', 'w') as st, open('tokens.json', 'w') as tk:
-        json.dump(symbol_table, st,indent=2)
-        json.dump(toks, tk,indent=2)
+        with open('symbol_table_data.json', 'w') as st, open('tokens.json', 'w') as tk:
+            json.dump(symbol_table, st,indent=2)
+            json.dump(toks, tk,indent=2)
 
-    # pprint.pprint(toks)
-    # pprint.pprint(symbol_table)
-
+    except Exception as e:
+        print(f"Error while tokenizing: {str(e)}")
 
 tokenize()
